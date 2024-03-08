@@ -5,87 +5,6 @@ p2_symbol = 'O'
 empty_symbol = 'e'
 
 
-
-# def row_check_S(state):
-#     #ROW CHECK
-#     n= len(state)
-#     diff = 0
-#     for i in range(n):
-#         p1_count = 0
-#         p2_count = 0
-#         for j in range(n):
-#             p1_count+=state[i][j]==p1_symbol
-#             p2_count+=state[i][j]==p2_symbol
-#         if(abs(p1_count-p2_count) > abs(diff)):
-#             diff = p1_count - p2_count
-#         if abs(diff)==(n):
-#             return diff
-#     return diff
-    
-
-# #Return the actual diff of maximum absolute difference b/w p1_symbols and p2_symbols across all columns    
-# def column_check_S(state):
-#     n = len(state)
-#     #COLUMN CHECK
-#     diff = 0
-#     for i in range(n):
-#         p1_count = 0
-#         p2_count = 0
-#         for j in range(n):
-#             p1_count+=state[j][i]==p1_symbol
-#             p2_count+=state[j][i]==p2_symbol
-#         if(abs(p1_count-p2_count) > abs(diff)):
-#             diff = p1_count - p2_count
-#         if abs(diff)==(n):
-#             return diff
-#     return diff
-
-
-# #Return the actual diff of maximum absolute difference b/w p1_symbols and p2_symbols across 2 key diags
-# def diagonal_check_S(state):
-#     #Diagonal Check(we only need to check the 2 principal diagonals as everything else won't give a sum of n)
-#     n = len(state)
-#     p2_count = 0
-#     p1_count = 0
-#     diff = 0
-#     for j in range(n):
-#         p1_count+=state[j][j]==p1_symbol
-#         p2_count+=state[j][j]==p2_symbol
-#     if(abs(p1_count-p2_count) > abs(diff)):
-#         diff = p1_count - p2_count
-#     if abs(diff)==(n):
-#         return diff
-#     p1_count = 0
-#     p2_count = 0
-#     for j in range(n):
-#         p1_count+=state[-1-j][j]==p1_symbol
-#         p2_count+=state[-1-j][j]==p2_symbol
-#     if(abs(p1_count-p2_count) > abs(diff)):
-#         diff = p1_count - p2_count
-#     if abs(diff)==(n):
-#         return diff
-#     return diff
-
-
-# #Assumption: RETURN +1 if p1 wins, -1 if p2 wins and 0 if no one has one yet
-# # (based on this plus the number of e's in board we can figure out if its a draw)
-# def check_gameover_S(state):
-#     n = len(state)
-#     #ROW CHECK
-#     ret = row_check_S(state)
-#     if abs(ret)==n:
-#         return ret//abs(ret)
-#     #Column Check
-#     ret = column_check_S(state)
-#     if abs(ret)==n:
-#         return ret//abs(ret)
-#     #Diagonal Check
-#     ret = diagonal_check_S(state)
-#     if abs(ret)==n:
-#         return ret//abs(ret)
-#     return 0
-
-
 #Return the maximum difference for both players across all rows 
 #i.e, if a row has full p2_symbols maximum abs diff is n, but we must return -n to differentiate it from row of p1_symbols 
 def row_check_S(state):
@@ -229,14 +148,14 @@ def next_states_S(pres_state, is_max):
 
 
 
-
+#is_over : minimax value, minimax: path/child to be chosen
 class state_D():
 
     def __init__(self, state,is_max):
         self.is_over=check_gameover_S(state)
         self.state = state
         self.children = []
-        self.minimax=6
+        self.minimax= None
         self.is_max= is_max
 
     def add_children(self, children):
@@ -310,33 +229,44 @@ def eval_D(is_max, max1,max2):
 #K-depth approximation to the minimax approach using a static evaluation function
 def K_depth_S(root,depth,k):
     if len(root.children)==0: 
-        root.minimax = root.is_over
+        # root.minimax = root.is_over ##We have changed the meaning of minimax, now it represents the path
         # print(root.state, root.is_over)
         # if(root.is_over==-1):
         #     print(root.is_over)
-        return root.is_over
+        return root
     if depth==k:
         max1, max2 = static_eval_fn_D(root.state)
-        return eval_D(root.is_max,max1,max2)
-    mini=10
-    maxi=-3
+        root.is_over = eval_D(root.is_max,max1,max2)
+        return root
+    mini=root.children[0]
+    maxi=root.children[0]
     for child in root.children:
         v = K_depth_S(child,depth+1, k)
         # print(type(v))
-        if(mini > v):
+        if(mini.is_over > v.is_over):
             mini = v
-        if(maxi < v):
+        if(maxi.is_over < v.is_over):
             maxi = v
     if root.is_max:
         root.minimax=maxi
+        root.is_over = maxi.is_over
         # print(root.state, root.minimax, p1_symbol)
-        return maxi
+        return root
     root.minimax=mini
+    root.is_over = mini.is_over
     # print(root.state, root.minimax, p2_symbol)
-    return mini
+    return root
 
 def tuple_it_D(state):
     return tuple(map(tuple, state))
+
+def print_board(state):
+    n = len(state)
+    print("")
+    for i in range(n):
+        print(state[i])
+    print("")
+
 
 if __name__=='__main__':
     depth = int(input("Enter max depth upto which u wanna search/build tree: "))
@@ -347,5 +277,11 @@ if __name__=='__main__':
     counte = 0
     s_map = {tuple_it_D(start): s0}
     root = build_tree_D(s0,depth, is_max=True)
+    K_depth_S(root,0,depth)
     # print("Minimax result for p1: ", minimax_S(root),"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
-    print("K depth result is: ", K_depth_S(root,0,depth),"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
+    print("K depth result is: ", root.is_over,"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
+    it = root
+    while(it.minimax is not None):
+        print_board(it.state)
+        print("")
+        it = it.minimax

@@ -1,5 +1,5 @@
 import copy
-#Board is a n*n character list
+#Board is a n*n character list of lists(2D list)
 p1_symbol = 'X'
 p2_symbol = 'O'
 empty_symbol = 'e'
@@ -68,6 +68,7 @@ empty_symbol = 'e'
 #     #Diagonal Check
 #     return diagonal_check_S(state)
 #     #If none of the three are matched, we return 0 to indicate no one has won(yet)
+
 
 #Return the actual difference of the maximum absolute difference b/w p1_symbols and p2_symbols across all rows 
 #i.e, if a row has full p2_symbols maximum abs diff is n, but we must return -n to differentiate it from row of p1_symbols 
@@ -160,7 +161,7 @@ def state_init_S(n):
         state.append(row)
     return state
 
-
+#Now we're updating it to ensure multiple nodes are not created for the same state by adding a dictionary
 def next_states_S(pres_state, is_max):
     next_states=[]
     n=len(pres_state)
@@ -169,14 +170,23 @@ def next_states_S(pres_state, is_max):
         symbol=p1_symbol
     else:
         symbol=p2_symbol
-    children_state = not is_max
+    children_player = not is_max
     for i in range(n):
         for j in range(n):
             if pres_state[i][j]==empty_symbol:
                 pres_state[i][j]=symbol
                 # print(pres_state)
                 dup = copy.deepcopy(pres_state)
-                next_states.append(state_D(dup, children_state))
+                dup_tup = tuple_it_D(dup)
+                if dup_tup in s_map:
+                    global counte
+                    counte+=1
+                    # print(1)
+                    next_states.append(s_map[dup_tup])
+                else:
+                    child=  state_D(dup, children_player)
+                    s_map[dup_tup] = child
+                    next_states.append(child)
                 # print(" after: ", pres_state)
                 pres_state[i][j]=empty_symbol
     return next_states
@@ -185,14 +195,18 @@ def next_states_S(pres_state, is_max):
 
 
 class state_D():
+
     def __init__(self, state,is_max):
         self.is_over=check_gameover_S(state)
         self.state = state
         self.children = []
         self.minimax=6
         self.is_max= is_max
+
     def add_children(self, children):
         self.children= children
+
+
 
 def build_tree_D(root,depth, is_max):
     n = len(root.state)
@@ -241,10 +255,13 @@ def minimax_S(root):
     # print(root.state, root.minimax, p2_symbol)
     return mini
 
-
+def tuple_it_D(state):
+    return tuple(map(tuple, state))
 if __name__=='__main__':
-    # start = state_init_S(2)
-    start = [['e', 'e', 'e'], ['e','e','e'],  ['e','e','e']]
+    start = state_init_S(3)
+    # start = [['O', 'e', 'e'], ['e','e','e'],  ['e','e','e']]
     s0 = state_D(start, True)
+    counte = 0
+    s_map = {tuple_it_D(start): s0}
     root = build_tree_D(s0,depth=0, is_max=True)
-    print(minimax_S(root))
+    print(minimax_S(root), counte)

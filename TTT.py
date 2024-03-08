@@ -1,9 +1,12 @@
 import copy
-#Board is a 3*3 character list
+#Board is a n*n character list
 p1_symbol = 'X'
 p2_symbol = 'O'
 empty_symbol = 'e'
-def check_gameover_S(state):
+
+#Assumption: RETURN +1 if p1 wins, -1 if p2 wins and 0 if no one has one yet
+# (based on this plus the number of e's in board we can figure out if its a draw)
+def row_check_S(state):
     #ROW CHECK
     n= len(state)
     for i in range(n):
@@ -16,7 +19,11 @@ def check_gameover_S(state):
             return -1
         if p1_count==(n):
             return 1
-        #COLUMN CHECK
+    return 0
+    
+def column_check_S(state):
+    n = len(state)
+    #COLUMN CHECK
     for i in range(n):
         p1_count = 0
         p2_count = 0
@@ -27,25 +34,42 @@ def check_gameover_S(state):
             return -1
         if p1_count==n:
             return 1
-    p1_count=0
-    p2_count=0
+    return 0
+
+def diagonal_check_S(state):
+    #Diagonal Check(we only need to check the 2 principal diagonals as everything else won't give a sum of n)
+    n = len(state)
+    p2_count = 0
+    p1_count = 0
     for j in range(n):
             p1_count+=state[j][j]==p1_symbol
             p2_count+=state[j][j]==p2_symbol
-            if p2_count==n:
-                return -1
-            if p1_count==n:
-                return 1
+    if p2_count==n:
+        return -1
+    if p1_count==n:
+        return 1
     p1_count = 0
     p2_count = 0
     for j in range(n):
             p1_count+=state[n-1-j][j]==p1_symbol
             p2_count+=state[n-1-j][j]==p2_symbol
-            if p2_count==n:
-                return -1
-            if p1_count==n:
-                return 1
+    if p2_count==n:
+        return -1
+    if p1_count==n:
+        return 1
     return 0
+def check_gameover_S(state):
+    #ROW CHECK
+    ret = row_check_S(state)
+    if ret:
+        return ret
+    #Column Check
+    ret = column_check_S(state)
+    if ret:
+        return ret
+    #Diagonal Check
+    return diagonal_check_S(state)
+    #If none of the three are matched, we return 0 to indicate no one has won(yet)
 
 def state_init_S(n):
     state=[]
@@ -131,7 +155,8 @@ def minimax_S(root):
 
 
 if __name__=='__main__':
-    start = state_init_S(3)
+    start = state_init_S(4)
+    # start = [['X', 'e', 'e'], ['e','e','e'],  ['e','e','e']]
     s0 = state_D(start, True)
     root = build_tree_D(s0,depth=0, is_max=True)
     print(minimax_S(root))

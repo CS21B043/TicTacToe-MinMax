@@ -5,6 +5,7 @@ p2_symbol = 'O'
 empty_symbol = 'e'
 
 
+
 #Return the maximum difference for both players across all rows 
 #i.e, if a row has full p2_symbols maximum abs diff is n, but we must return -n to differentiate it from row of p1_symbols 
 def row_check_S(state):
@@ -163,11 +164,12 @@ class state_D():
 
 
 
-def build_tree_D(root,depth,is_max):
+def build_tree_D(root,depth):
     n = len(root.state)
     q = [root]
     cur_depth = 0
     keep_going = True
+    is_max = root.is_max
     while(cur_depth < depth and keep_going):
         size=len(q)
         print("Size of queue: ", size,"    Is p1:", is_max,"    Current Depth: ",  cur_depth)
@@ -213,16 +215,20 @@ def minimax_S(root):
 
 
 #Helper function to sefd
-def eval_D(is_max, max1,max2):
+def eval_D(is_max, max1,max2,size):
+    if max1==size:
+        return 1
+    if max2==-size:
+        return -1
     if is_max:
         if(max1>=max2):
             return 1
         elif max1 == max2 - 1:
             return 0
         return -1
-    if(max1>max2):
+    if(max1>max2+1):
         return 1
-    elif max1 == max2:
+    elif max1 == max2+1:
         return 0
     return -1
 
@@ -236,7 +242,7 @@ def K_depth_S(root,depth,k):
         return root
     if depth==k:
         max1, max2 = static_eval_fn_D(root.state)
-        root.is_over = eval_D(root.is_max,max1,max2)
+        root.is_over = eval_D(root.is_max,max1,max2,len(root.state))
         return root
     mini=root.children[0]
     maxi=root.children[0]
@@ -272,16 +278,29 @@ if __name__=='__main__':
     depth = int(input("Enter max depth upto which u wanna search/build tree: "))
     n = int(input("Enter the size of the tic tac toe board(n): "))
     start = state_init_S(n)
-    # start = [['O', 'e', 'e'], ['e','e','e'],  ['e','e','e']]
+    # start = [['X', 'e', 'e'], ['e','e','e'],  ['e','e','e']]
     s0 = state_D(start, True)
     counte = 0
     s_map = {tuple_it_D(start): s0}
-    root = build_tree_D(s0,depth, is_max=True)
-    K_depth_S(root,0,depth)
+    # root = build_tree_D(s0,depth)
+    # K_depth_S(root,0,depth)
     # print("Minimax result for p1: ", minimax_S(root),"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
-    print("K depth result is: ", root.is_over,"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
-    it = root
-    while(it.minimax is not None):
-        print_board(it.state)
-        print("")
-        it = it.minimax
+    # print("K depth result is: ", root.is_over,"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
+    it = s0
+    tot_depth=0
+    grid_size = n*n
+    while((check_gameover_S(it.state)==0) and (tot_depth <= grid_size)):
+        # print(tot_depth, grid_size)
+        # i+=1
+        it = build_tree_D(it,depth)
+        K_depth_S(it,0,depth)
+        # print("Minimax result for p1: ", minimax_S(root),"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
+        print("K depth result is: ", it.is_over,"   Number of duplicate nodes avoided:", counte,"   Number of nodes in map:",len(s_map))
+        for i in range(depth):
+            print_board(it.state)
+            print("")
+            tot_depth +=1
+            if check_gameover_S(it.state)!=0 or tot_depth >grid_size:
+                break
+            if it.minimax is not None:
+                it = it.minimax
